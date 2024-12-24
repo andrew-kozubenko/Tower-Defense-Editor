@@ -14,11 +14,11 @@ public class CreateController {
     }
 
     public void onEnemyButtonPressed() {
-
+        sceneController.switchTo("CreateEnemy");
     }
 
     public void onWaveButtonPressed() {
-
+        sceneController.switchTo("CreateWave");
     }
 
     public void onMapButtonPressed() {

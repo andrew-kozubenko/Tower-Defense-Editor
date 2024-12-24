@@ -10,7 +10,9 @@ module ru.nsu.t4werok.towerdefenseeditor.app {
 
     exports ru.nsu.t4werok.towerdefenseeditor.app;
     exports ru.nsu.t4werok.towerdefenseeditor.config.entities.map;
+    exports ru.nsu.t4werok.towerdefenseeditor.config.entities.enemy;
 
     opens ru.nsu.t4werok.towerdefenseeditor.app to javafx.fxml;
     opens ru.nsu.t4werok.towerdefenseeditor.model.entities.map to com.fasterxml.jackson.databind;
+    opens ru.nsu.t4werok.towerdefenseeditor.config.entities.enemy to com.fasterxml.jackson.databind;
 }
