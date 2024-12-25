@@ -10,7 +10,7 @@ public class CreateController {
     }
 
     public void onTowerButtonPressed() {
-
+        sceneController.switchTo("CreateTower");
     }
 
     public void onEnemyButtonPressed() {

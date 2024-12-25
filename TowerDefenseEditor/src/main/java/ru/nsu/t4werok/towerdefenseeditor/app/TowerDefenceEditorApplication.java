@@ -10,11 +10,13 @@ import ru.nsu.t4werok.towerdefenseeditor.controller.create.CreateController;
 import ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.enemy.EnemyCreateController;
 import ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.enemy.WaveCreateController;
 import ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.map.MapCreateController;
+import ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.tower.TowerCreateController;
 import ru.nsu.t4werok.towerdefenseeditor.view.MainMenuView;
 import ru.nsu.t4werok.towerdefenseeditor.view.create.CreateView;
 import ru.nsu.t4werok.towerdefenseeditor.view.create.entities.enemy.EnemyCreateView;
 import ru.nsu.t4werok.towerdefenseeditor.view.create.entities.enemy.WaveCreateView;
 import ru.nsu.t4werok.towerdefenseeditor.view.create.entities.map.MapCreateView;
+import ru.nsu.t4werok.towerdefenseeditor.view.create.entities.tower.TowerCreateView;
 
 import java.io.IOException;
 
@@ -32,6 +34,7 @@ public class TowerDefenceEditorApplication extends Application {
         MapCreateController mapCreateController = new MapCreateController();
         WaveCreateController waveCreateController = new WaveCreateController();
         EnemyCreateController enemyCreateController = new EnemyCreateController();
+        TowerCreateController towerCreateController = new TowerCreateController();
 //        SettingsController settingsController = new SettingsController(sceneController);
 
         // Представления
@@ -40,6 +43,7 @@ public class TowerDefenceEditorApplication extends Application {
         MapCreateView mapCreateView = new MapCreateView(mapCreateController);
         WaveCreateView waveCreateView = new WaveCreateView(waveCreateController);
         EnemyCreateView enemyCreateView = new EnemyCreateView(enemyCreateController);
+        TowerCreateView towerCreateView = new TowerCreateView(towerCreateController);
 //        SettingsView settingsView = new SettingsView(settingsController);
 
         // Регистрация сцен
@@ -48,6 +52,7 @@ public class TowerDefenceEditorApplication extends Application {
         sceneController.addScene("CreateMap", mapCreateView.getScene());
         sceneController.addScene("CreateWave", waveCreateView.getScene());
         sceneController.addScene("CreateEnemy", enemyCreateView.getScene());
+        sceneController.addScene("CreateTower", towerCreateView.getScene());
 
 //        sceneController.addScene("Edit", EditView.getScene());
 //        sceneController.addScene("Settings", settingsView.getScene());
