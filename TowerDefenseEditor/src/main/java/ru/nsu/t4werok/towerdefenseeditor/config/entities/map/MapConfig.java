@@ -16,7 +16,10 @@ public class MapConfig {
     private List<Integer[]> towerPositions; // Доступные позиции для башен
     private Integer[] spawnPoint; // Точка появления врагов
     private Base base; // База
-    private String backgroundImage;
+    private String backgroundImagePath;
+    private String baseImagePath;
+    private String towerImagePath;
+    private String spawnPointImagePath;
 
     public String getMapName() {
         return mapName;
@@ -74,12 +77,56 @@ public class MapConfig {
         this.base = base;
     }
 
-    public String getBackgroundImage() {
-        return backgroundImage;
+    public String getBackgroundImagePath() {
+        return backgroundImagePath;
     }
 
-    public void setBackgroundImage(String backgroundImage) {
-        this.backgroundImage = backgroundImage;
+    public void setBackgroundImagePath (String backgroundImage) {
+        this.backgroundImagePath = backgroundImage;
+    }
+
+    public String getBaseImagePath() {
+        return baseImagePath;
+    }
+
+    public void setBaseImagePath(String baseImage) {
+        this.baseImagePath = baseImage;
+    }
+
+    public String getTowerImagePath() {
+        return towerImagePath;
+    }
+
+    public void setTowerImagePath(String towerImage) {
+        this.towerImagePath = towerImage;
+    }
+
+    public String getSpawnPointImagePath() {
+        return spawnPointImagePath;
+    }
+
+    public void setSpawnPointImagePath(String spawnPointImagePath) {
+        this.spawnPointImagePath = spawnPointImagePath;
+    }
+
+    @JsonIgnore
+    public Image getBackgroundImage() {
+        return getImage(backgroundImagePath);
+    }
+
+    @JsonIgnore
+    public Image getBaseImage() {
+        return getImage(baseImagePath);
+    }
+
+    @JsonIgnore
+    public Image getTowerImage() {
+        return getImage(towerImagePath);
+    }
+
+    @JsonIgnore
+    public Image getSpawnPointImage() {
+        return getImage(spawnPointImagePath);
     }
 
     public void setBasePosition(int x, int y) {
@@ -100,15 +147,14 @@ public class MapConfig {
         towerPositions.add(position);
     }
 
-    @JsonIgnore
-    public Image getImage() {
+    private Image getImage(String path) {
         try {
             // Преобразуем путь в URL
-            File file = new File(backgroundImage);
+            File file = new File(path);
             if (file.exists()) {
                 return new Image(file.toURI().toString());
             } else {
-                System.err.println("Background image file not found: " + backgroundImage);
+                System.err.println("Background image file not found: " + path);
                 return null; // Если файл отсутствует, устанавливаем null
             }
         } catch (Exception e) {
