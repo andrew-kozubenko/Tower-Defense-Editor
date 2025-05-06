@@ -7,6 +7,7 @@ module ru.nsu.t4werok.towerdefenseeditor.app {
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
     requires com.fasterxml.jackson.databind;
+    requires java.desktop;
 
     exports ru.nsu.t4werok.towerdefenseeditor.app;
     exports ru.nsu.t4werok.towerdefenseeditor.config.entities.map;

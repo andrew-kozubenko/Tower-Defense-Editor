@@ -5,17 +5,11 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.map.MapCreateController;
 import ru.nsu.t4werok.towerdefenseeditor.config.entities.map.MapConfig;
 import ru.nsu.t4werok.towerdefenseeditor.model.entities.map.GameMap;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +18,7 @@ public class MapCreateView {
     private final MapCreateController controller;
     private final Canvas canvas;
     private final GraphicsContext gc;
+    private final MapRenderer mapRenderer;
     private GameMap gameMap = null;
     private String currentAction = null;
     private List<Integer[]> currentPath = new ArrayList<>();
@@ -32,7 +27,17 @@ public class MapCreateView {
         this.controller = controller;
         this.canvas = new Canvas(800, 600);
         this.gc = canvas.getGraphicsContext2D();
+        this.mapRenderer = new MapRenderer(this.controller, this.canvas, this.gc);
 
+        initializeMouseHandler();
+
+        // Основная панель
+        BorderPane root = buildLayout();
+
+        this.scene = new Scene(root, 1100, 700);
+    }
+
+    private void initializeMouseHandler() {
         canvas.setOnMouseClicked(event -> {
             if (currentAction == null) return;
 
@@ -57,21 +62,26 @@ public class MapCreateView {
                     break;
                 case "addPath":
                     currentPath.add(new Integer[]{column, row});
-                    renderMap(); // Обновляем отображение пути
                     break;
                 case "setSpawn":
                     mapConfig.setSpawnPoint(new Integer[]{column, row});
-                    renderMap();
                     break;
             }
 
-            renderMap(); // Обновляем отображение карты
+            mapRenderer.renderMap(); // Обновляем отображение карты
         });
+    }
 
-        // Основная панель
+    private BorderPane buildLayout() {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
+        // Панель управления
+        root.setLeft(buildControlPanel());
+        root.setCenter(canvas);
+        return root;
+    }
 
+    private VBox buildControlPanel() {
         // Панель управления
         VBox controlPanel = new VBox(10);
         controlPanel.setPadding(new Insets(10));
@@ -85,7 +95,7 @@ public class MapCreateView {
         applyMapNameButton.setOnAction(e -> {
             String mapName = mapNameField.getText();
             controller.getMapConfig().setMapName(mapName);
-            renderMap();
+            mapRenderer.renderMap();
         });
 
         // Поля для ввода размеров карты
@@ -104,7 +114,7 @@ public class MapCreateView {
             controller.getMapConfig().setWidth(width);
             controller.getMapConfig().setHeight(height);
 
-            renderMap();
+            mapRenderer.renderMap();
         });
 
         // Добавление базы
@@ -128,7 +138,7 @@ public class MapCreateView {
                 mapConfig.addEnemyPath(new ArrayList<>(currentPath));
                 currentPath.clear(); // Очистить текущий путь
             }
-            renderMap(); // Перерисовать карту с новым путем
+            mapRenderer.renderMap(); // Перерисовать карту с новым путем
         });
 
 
@@ -147,53 +157,39 @@ public class MapCreateView {
         // Сохранение карты
         Button saveButton = new Button("Save Map");
         saveButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Save Map Config");
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
-            File file = fileChooser.showSaveDialog(null);
-            if (file != null) {
-                try {
-                    controller.saveMapConfig(file);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
+            controller.saveMapConfig();
         });
 
         // Загрузка карты
         Button loadButton = new Button("Load Map");
         loadButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Load Map Config");
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
-            File file = fileChooser.showOpenDialog(null);
-            if (file != null) {
-                try {
-                    controller.loadMapConfig(file);
-                    renderMap();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
+            controller.loadMapConfig();
+            mapRenderer.renderMap();
         });
 
         // Добавление кнопки для загрузки изображения
-        Button addBackgroundButton = new Button("Add Background Image");
-        addBackgroundButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Background Image");
-            fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
-            );
-            File file = fileChooser.showOpenDialog(null);
-            if (file != null) {
-                try {
-                    controller.getMapConfig().setBackgroundImage(file.getAbsolutePath());
-                    renderMap(); // Перерисовка карты
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
+        Button addBackgroundImageButton = new Button("Add Background Image");
+        addBackgroundImageButton.setOnAction(e -> {
+            controller.selectImage("Background");
+            mapRenderer.renderMap(); // Перерисовка карты
+        });
+
+        Button addTowerImageButton = new Button("Add Tower Position Image");
+        addTowerImageButton.setOnAction(e -> {
+            controller.selectImage("Tower");
+            mapRenderer.renderMap(); // Перерисовка карты
+        });
+
+        Button addBaseImageButton = new Button("Add Base Image");
+        addBaseImageButton.setOnAction(e -> {
+            controller.selectImage("Base");
+            mapRenderer.renderMap(); // Перерисовка карты
+        });
+
+        Button addSpawnPointImageButton = new Button("Add Spawn Point Image");
+        addSpawnPointImageButton.setOnAction(e -> {
+            controller.selectImage("SpawnPoint");
+            mapRenderer.renderMap(); // Перерисовка карты
         });
 
         controlPanel.getChildren().addAll(
@@ -209,82 +205,18 @@ public class MapCreateView {
                 finishPathButton,
                 addTowerButton,
                 setSpawnButton,
-                addBackgroundButton,
+                addBackgroundImageButton,
+                addTowerImageButton,
+                addBaseImageButton,
+                addSpawnPointImageButton,
                 saveButton,
                 loadButton
         );
 
-        root.setLeft(controlPanel);
-        root.setCenter(canvas);
-
-        this.scene = new Scene(root, 1100, 700);
-//        renderMap();
+        return controlPanel;
     }
 
     public Scene getScene() {
         return scene;
-    }
-
-    public void renderMap() {
-        MapConfig gameMapConfig = controller.getMapConfig();
-        if (gameMapConfig == null) {
-            return;
-        }
-
-        Image backgroundImage = gameMapConfig.getImage();
-        if (backgroundImage != null) {
-            gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
-        }
-
-        // Отрисовка сетки
-        int cellWidth = (int) (canvas.getWidth() / gameMapConfig.getWidth());
-        int cellHeight = (int) (canvas.getHeight() / gameMapConfig.getHeight());
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(0.5); // Тонкие линии для сетки
-        for (int x = 0; x <= gameMapConfig.getWidth(); x++) {
-            gc.strokeLine(x * cellWidth, 0, x * cellWidth, canvas.getHeight());
-        }
-        for (int y = 0; y <= gameMapConfig.getHeight(); y++) {
-            gc.strokeLine(0, y * cellHeight, canvas.getWidth(), y * cellHeight);
-        }
-
-        // Отрисовка доступных позиций для башен
-        if (gameMapConfig.getTowerPositions() != null) {
-            gc.setFill(Color.GREEN);
-            for (Integer[] position : gameMapConfig.getTowerPositions()) {
-                gc.fillRect(position[0] * cellWidth, position[1] * cellHeight, cellWidth, cellHeight);
-            }
-        }
-
-        if (gameMapConfig.getEnemyPaths() != null) {
-            // Отрисовка пути врагов
-            gc.setStroke(Color.RED);
-            gc.setLineWidth(3);
-            for (List<Integer[]> path : gameMapConfig.getEnemyPaths()) {
-                for (int i = 0; i < path.size() - 1; i++) {
-                    Integer[] start = path.get(i);
-                    Integer[] end = path.get(i + 1);
-                    gc.strokeLine(
-                            start[0] * cellWidth + cellWidth / 2, start[1] * cellHeight + cellHeight / 2,
-                            end[0] * cellWidth + cellWidth / 2, end[1] * cellHeight + cellHeight / 2
-                    );
-                }
-            }
-        }
-
-        if (gameMapConfig.getBase() != null) {
-            // Отрисовка базы
-            gc.setFill(Color.BLUE);
-            int baseX = gameMapConfig.getBase().getX();
-            int baseY = gameMapConfig.getBase().getY();
-            gc.fillRect(baseX * cellWidth, baseY * cellHeight, cellWidth, cellHeight); // Рисуем базу
-        }
-
-        if (gameMapConfig.getSpawnPoint() != null) {
-            // Отрисовка точки спавна
-            gc.setFill(Color.YELLOW);
-            Integer[] spawn = gameMapConfig.getSpawnPoint();
-            gc.fillRect(spawn[0] * cellWidth, spawn[1] * cellHeight, cellWidth, cellHeight); // Рисуем точку спавна
-        }
     }
 }
