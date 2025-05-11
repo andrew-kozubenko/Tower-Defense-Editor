@@ -26,85 +26,119 @@ public class MapRenderer {
             return;
         }
 
+        // Очищаем canvas
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        // Рассчитываем размер клетки как минимальное из (ширина_канваса/ширина_карты, высота_канваса/высота_карты)
+        int cellSize = calculateCellSize(mapConfig);
+
+        // Рассчитываем отступы для центрирования сетки
+        double offsetX = (canvas.getWidth() - cellSize * mapConfig.getWidth()) / 2;
+        double offsetY = (canvas.getHeight() - cellSize * mapConfig.getHeight()) / 2;
+
+        // Рисуем фон (если есть)
         Image backgroundImage = mapConfig.getBackgroundImage();
         if (backgroundImage != null) {
-            gc.drawImage(backgroundImage, 0, 0, canvas.getWidth(), canvas.getHeight());
+            gc.drawImage(backgroundImage, offsetX, offsetY,
+                    cellSize * mapConfig.getWidth(),
+                    cellSize * mapConfig.getHeight());
         }
-
-        int cellWidth = (int) (canvas.getWidth() / mapConfig.getWidth());
-        int cellHeight = (int) (canvas.getHeight() / mapConfig.getHeight());
 
         // Отрисовка сетки
-        renderGrid(mapConfig, cellWidth, cellHeight);
+        renderGrid(mapConfig, cellSize, offsetX, offsetY);
 
-        // Отрисовка доступных позиций для башен
-        renderTowerPositions(mapConfig, cellWidth, cellHeight);
-
-        // Отрисовка путей врагов
-        renderEnemyPaths(mapConfig, cellWidth, cellHeight);
-
-        // Отрисовка базы
-        renderBase(mapConfig, cellWidth, cellHeight);
-
-        // Отрисовка точки спавна
-        renderSpawnPoint(mapConfig, cellWidth, cellHeight);
+        // Отрисовка остальных элементов с учетом отступов
+        renderTowerPositions(mapConfig, cellSize, offsetX, offsetY);
+        renderEnemyPaths(mapConfig, cellSize, offsetX, offsetY);
+        renderBase(mapConfig, cellSize, offsetX, offsetY);
+        renderSpawnPoint(mapConfig, cellSize, offsetX, offsetY);
     }
 
-    private void renderGrid(MapConfig mapConfig, int cellWidth, int cellHeight) {
+    public int calculateCellSize(MapConfig mapConfig) {
+        int maxCellWidth = (int) (canvas.getWidth() / mapConfig.getWidth());
+        int maxCellHeight = (int) (canvas.getHeight() / mapConfig.getHeight());
+        return Math.min(maxCellWidth, maxCellHeight);
+    }
+
+    private void renderGrid(MapConfig mapConfig, int cellSize, double offsetX, double offsetY) {
         gc.setStroke(Color.BLACK);
-        gc.setLineWidth(0.5); // Тонкие линии для сетки
+        gc.setLineWidth(0.5);
+
+        // Вертикальные линии
         for (int x = 0; x <= mapConfig.getWidth(); x++) {
-            gc.strokeLine(x * cellWidth, 0, x * cellWidth, canvas.getHeight());
+            double lineX = offsetX + x * cellSize;
+            gc.strokeLine(lineX, offsetY, lineX, offsetY + mapConfig.getHeight() * cellSize);
         }
+
+        // Горизонтальные линии
         for (int y = 0; y <= mapConfig.getHeight(); y++) {
-            gc.strokeLine(0, y * cellHeight, canvas.getWidth(), y * cellHeight);
+            double lineY = offsetY + y * cellSize;
+            gc.strokeLine(offsetX, lineY, offsetX + mapConfig.getWidth() * cellSize, lineY);
         }
     }
 
-    private void renderTowerPositions(MapConfig mapConfig, int cellWidth, int cellHeight) {
-        if (mapConfig.getTowerPositions() != null) {
-            Image towerImage = mapConfig.getTowerImage();
+    private void renderTowerPositions(MapConfig mapConfig, int cellSize, double offsetX, double offsetY) {
+        if (mapConfig.getTowerPositions() != null && mapConfig.getTowerImage() != null) {
             for (Integer[] position : mapConfig.getTowerPositions()) {
-                gc.drawImage(towerImage,
-                        position[0] * cellWidth, position[1] * cellHeight, cellWidth, cellHeight);
-
+                gc.drawImage(mapConfig.getTowerImage(),
+                        offsetX + position[0] * cellSize,
+                        offsetY + position[1] * cellSize,
+                        cellSize, cellSize);
             }
         }
     }
 
-    private void renderEnemyPaths(MapConfig mapConfig, int cellWidth, int cellHeight) {
+    private void renderEnemyPaths(MapConfig mapConfig, int cellSize, double offsetX, double offsetY) {
+        gc.setStroke(Color.RED);
+        gc.setLineWidth(3);
+
+        // Рендерим сохраненные пути
         if (mapConfig.getEnemyPaths() != null) {
-            gc.setStroke(Color.RED);
-            gc.setLineWidth(3);
             for (List<Integer[]> path : mapConfig.getEnemyPaths()) {
-                for (int i = 0; i < path.size() - 1; i++) {
-                    Integer[] start = path.get(i);
-                    Integer[] end = path.get(i + 1);
-                    gc.strokeLine(
-                            start[0] * cellWidth + cellWidth / 2, start[1] * cellHeight + cellHeight / 2,
-                            end[0] * cellWidth + cellWidth / 2, end[1] * cellHeight + cellHeight / 2
-                    );
-                }
+                renderPath(path, cellSize, offsetX, offsetY);
             }
         }
     }
 
-    private void renderBase(MapConfig mapConfig, int cellWidth, int cellHeight) {
-        if (mapConfig.getBase() != null) {
+    public void renderCurrentPath(List<Integer[]> currentPath, int cellSize, double offsetX, double offsetY) {
+        gc.setStroke(Color.RED);
+        gc.setLineWidth(3);
+        renderPath(currentPath, cellSize, offsetX, offsetY);
+    }
+
+    private void renderPath(List<Integer[]> path, int cellSize, double offsetX, double offsetY) {
+        if (path.size() < 2) return;
+
+        for (int i = 0; i < path.size() - 1; i++) {
+            Integer[] start = path.get(i);
+            Integer[] end = path.get(i + 1);
+            gc.strokeLine(
+                    offsetX + start[0] * cellSize + cellSize / 2,
+                    offsetY + start[1] * cellSize + cellSize / 2,
+                    offsetX + end[0] * cellSize + cellSize / 2,
+                    offsetY + end[1] * cellSize + cellSize / 2
+            );
+        }
+    }
+
+    private void renderBase(MapConfig mapConfig, int cellSize, double offsetX, double offsetY) {
+        if (mapConfig.getBase() != null && mapConfig.getBaseImage() != null) {
             int baseX = mapConfig.getBase().getX();
             int baseY = mapConfig.getBase().getY();
-            Image baseImage = mapConfig.getBaseImage();
-            gc.drawImage(baseImage,
-                    baseX * cellWidth, baseY * cellHeight, cellWidth, cellHeight); // Рисуем базу
+            gc.drawImage(mapConfig.getBaseImage(),
+                    offsetX + baseX * cellSize,
+                    offsetY + baseY * cellSize,
+                    cellSize, cellSize);
         }
     }
 
-    private void renderSpawnPoint(MapConfig mapConfig, int cellWidth, int cellHeight) {
-        if (mapConfig.getSpawnPoint() != null) {
+    private void renderSpawnPoint(MapConfig mapConfig, int cellSize, double offsetX, double offsetY) {
+        if (mapConfig.getSpawnPoint() != null && mapConfig.getSpawnPointImage() != null) {
             Integer[] spawn = mapConfig.getSpawnPoint();
-            Image spawnPoinImage = mapConfig.getSpawnPointImage();
-            gc.drawImage(spawnPoinImage,
-                    spawn[0] * cellWidth, spawn[1] * cellHeight, cellWidth, cellHeight);// Рисуем точку спавна
+            gc.drawImage(mapConfig.getSpawnPointImage(),
+                    offsetX + spawn[0] * cellSize,
+                    offsetY + spawn[1] * cellSize,
+                    cellSize, cellSize);
         }
     }
 }

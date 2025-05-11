@@ -170,4 +170,91 @@ public class MapConfig {
         this.enemyPaths = new ArrayList<>(other.enemyPaths);
         this.towerPositions = new ArrayList<>(other.towerPositions);
     }
+
+    @JsonIgnore
+    public boolean isValidForSave() {
+        // Проверка обязательных полей
+        if (mapName == null || mapName.isEmpty()) {
+            return false;
+        }
+
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            return false;
+        }
+
+        if (base == null) {
+            return false;
+        }
+
+        if (spawnPoint == null || spawnPoint.length != 2) {
+            return false;
+        }
+
+        if (enemyPaths == null || enemyPaths.isEmpty()) {
+            return false;
+        }
+
+        // Проверка изображений
+        if (baseImagePath == null || baseImagePath.isEmpty()) {
+            return false;
+        }
+
+        if (spawnPointImagePath == null || spawnPointImagePath.isEmpty()) {
+            return false;
+        }
+
+        // Проверка хотя бы одной башни
+        if (towerPositions == null || towerPositions.isEmpty()) {
+            return false;
+        }
+
+        if (towerImagePath == null || towerImagePath.isEmpty()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @JsonIgnore
+    public String getValidationErrors() {
+        StringBuilder errors = new StringBuilder();
+
+        if (mapName == null || mapName.isEmpty()) {
+            errors.append("Map name is required\n");
+        }
+
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            errors.append("Map dimensions must be positive numbers\n");
+        }
+
+        if (base == null) {
+            errors.append("Base position must be set\n");
+        }
+
+        if (spawnPoint == null || spawnPoint.length != 2) {
+            errors.append("Spawn point must be set\n");
+        }
+
+        if (enemyPaths == null || enemyPaths.isEmpty()) {
+            errors.append("At least one enemy path must be added\n");
+        }
+
+        if (baseImagePath == null || baseImagePath.isEmpty()) {
+            errors.append("Base image is required\n");
+        }
+
+        if (spawnPointImagePath == null || spawnPointImagePath.isEmpty()) {
+            errors.append("Spawn point image is required\n");
+        }
+
+        if (towerPositions == null || towerPositions.isEmpty()) {
+            errors.append("At least one tower position must be added\n");
+        }
+
+        if (towerImagePath == null || towerImagePath.isEmpty()) {
+            errors.append("Tower image is required\n");
+        }
+
+        return errors.toString();
+    }
 }

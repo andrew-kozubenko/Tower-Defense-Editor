@@ -42,23 +42,30 @@ public class MapCreateView {
             if (currentAction == null) return;
 
             MapConfig mapConfig = controller.getMapConfig();
-            int cellWidth = (int) (canvas.getWidth() / mapConfig.getWidth());
-            int cellHeight = (int) (canvas.getHeight() / mapConfig.getHeight());
+            int cellSize = mapRenderer.calculateCellSize(mapConfig);
+
+            // Рассчитываем отступы для центрирования
+            double offsetX = (canvas.getWidth() - cellSize * mapConfig.getWidth()) / 2;
+            double offsetY = (canvas.getHeight() - cellSize * mapConfig.getHeight()) / 2;
+
+            // Проверяем, что клик был внутри сетки
+            if (event.getX() < offsetX || event.getX() > offsetX + cellSize * mapConfig.getWidth() ||
+                    event.getY() < offsetY || event.getY() > offsetY + cellSize * mapConfig.getHeight()) {
+                return;
+            }
 
             // Вычисляем координаты ячейки
-            int column = (int) (event.getX() / cellWidth);
-            int row = (int) (event.getY() / cellHeight);
+            int column = (int) ((event.getX() - offsetX) / cellSize);
+            int row = (int) ((event.getY() - offsetY) / cellSize);
 
-            // Обработка действий в зависимости от текущего режима
+            // Обработка действий
             switch (currentAction) {
                 case "setBase":
-                    if (controller.getMapConfig().getBase() != null) {
-                        break;
-                    }
-                    mapConfig.setBasePosition(column, row); // Устанавливаем базу
+                    if (controller.getMapConfig().getBase() != null) break;
+                    mapConfig.setBasePosition(column, row);
                     break;
                 case "addTower":
-                    mapConfig.addTowerPosition(new Integer[]{column, row}); // Добавляем позицию башни
+                    mapConfig.addTowerPosition(new Integer[]{column, row});
                     break;
                 case "addPath":
                     currentPath.add(new Integer[]{column, row});
@@ -68,7 +75,8 @@ public class MapCreateView {
                     break;
             }
 
-            mapRenderer.renderMap(); // Обновляем отображение карты
+            mapRenderer.renderMap();
+            mapRenderer.renderCurrentPath(currentPath, cellSize, offsetX, offsetY);
         });
     }
 
@@ -87,6 +95,8 @@ public class MapCreateView {
         controlPanel.setPadding(new Insets(10));
         controlPanel.setPrefWidth(300);
 
+        List<Button> buttonsToDisable = new ArrayList<>();
+
         // Поле для ввода имени карты
         TextField mapNameField = new TextField();
         mapNameField.setPromptText("Enter map name");
@@ -95,7 +105,6 @@ public class MapCreateView {
         applyMapNameButton.setOnAction(e -> {
             String mapName = mapNameField.getText();
             controller.getMapConfig().setMapName(mapName);
-            mapRenderer.renderMap();
         });
 
         // Поля для ввода размеров карты
@@ -120,15 +129,22 @@ public class MapCreateView {
         // Добавление базы
         Button setBaseButton = new Button("Set Base");
         setBaseButton.setOnAction(e -> {
+            if (controller.getMapConfig().getBaseImage() == null) {
+                showImageWarning("Base");
+                return;
+            }
             currentAction = "setBase";
             currentPath.clear();
-
         });
 
         // Добавление пути врагов
         Button addPathButton = new Button("Add Enemy Path");
         addPathButton.setOnAction(e -> {
             currentAction = "addPath";
+            // Отключаем все кнопки из списка
+            for (Button button : buttonsToDisable) {
+                button.setDisable(true);
+            }
         });
 
         Button finishPathButton = new Button("Finish Path");
@@ -138,6 +154,9 @@ public class MapCreateView {
                 mapConfig.addEnemyPath(new ArrayList<>(currentPath));
                 currentPath.clear(); // Очистить текущий путь
             }
+            for (Button button : buttonsToDisable) {
+                button.setDisable(false);
+            }
             mapRenderer.renderMap(); // Перерисовать карту с новым путем
         });
 
@@ -145,12 +164,19 @@ public class MapCreateView {
         // Добавление позиций для башен
         Button addTowerButton = new Button("Add Tower Positions");
         addTowerButton.setOnAction(e -> {
+            if (controller.getMapConfig().getTowerImage() == null) {
+                showImageWarning("Tower");
+                return;
+            }
             currentAction = "addTower";
         });
-
         // Установка точки спавна
         Button setSpawnButton = new Button("Set Spawn Point");
         setSpawnButton.setOnAction(e -> {
+            if (controller.getMapConfig().getSpawnPointImage() == null) {
+                showImageWarning("Spawn Point");
+                return;
+            }
             currentAction = "setSpawn";
         });
 
@@ -192,6 +218,17 @@ public class MapCreateView {
             mapRenderer.renderMap(); // Перерисовка карты
         });
 
+        buttonsToDisable.add(setBaseButton);
+        buttonsToDisable.add(addPathButton);
+        buttonsToDisable.add(addTowerButton);
+        buttonsToDisable.add(setSpawnButton);
+        buttonsToDisable.add(saveButton);
+        buttonsToDisable.add(loadButton);
+        buttonsToDisable.add(addBackgroundImageButton);
+        buttonsToDisable.add(addTowerImageButton);
+        buttonsToDisable.add(addBaseImageButton);
+        buttonsToDisable.add(addSpawnPointImageButton);
+
         controlPanel.getChildren().addAll(
                 new Label("Map Name:"),
                 mapNameField,
@@ -214,6 +251,14 @@ public class MapCreateView {
         );
 
         return controlPanel;
+    }
+
+    private void showImageWarning(String imageType) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Image Required");
+        alert.setHeaderText(null);
+        alert.setContentText("Please add " + imageType + " image first!");
+        alert.showAndWait();
     }
 
     public Scene getScene() {
