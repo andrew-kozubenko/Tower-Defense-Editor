@@ -1,6 +1,7 @@
 package ru.nsu.t4werok.towerdefenseeditor.controller.create.entities.map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
 import ru.nsu.t4werok.towerdefenseeditor.config.entities.map.MapConfig;
 
@@ -51,7 +52,20 @@ public class MapCreateController {
         }
     }
 
+    private void showValidationError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Validation Error");
+        alert.setHeaderText("Cannot save map");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public void saveMapConfig() {
+        if (!mapConfig.isValidForSave()) {
+            showValidationError(mapConfig.getValidationErrors());
+            return;
+        }
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Map Config");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
